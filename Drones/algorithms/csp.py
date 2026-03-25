@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from collections import deque
+from copy import deepcopy
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -44,6 +46,48 @@ def backtracking_fc(csp: DroneAssignmentCSP) -> dict[str, str] | None:
     return None
 
 
+def revise(csp: DroneAssignmentCSP, domains: dict[str, list[str]], xi: str, xj: str) -> bool:
+    revised = False
+    to_remove = []
+
+    for vi in domains[xi]:
+        supported = False
+        for vj in domains[xj]:
+            temp_assignment = {xi: vi}
+            if csp.is_consistent(xj, vj, temp_assignment):
+                supported = True
+                break
+        if not supported:
+            to_remove.append(vi)
+
+    for vi in to_remove:
+        domains[xi].remove(vi)
+        revised = True
+
+    return revised
+
+
+def ac3(csp: DroneAssignmentCSP, domains: dict[str, list[str]], queue=None) -> bool:
+    if queue is None:
+        queue = deque()
+        for xi in domains:
+            for xj in csp.get_neighbors(xi):
+                queue.append((xi, xj))
+
+    while queue:
+        xi, xj = queue.popleft()
+
+        if revise(csp, domains, xi, xj):
+            if len(domains[xi]) == 0:
+                return False
+
+            for xk in csp.get_neighbors(xi):
+                if xk != xj:
+                    queue.append((xk, xi))
+
+    return True
+
+
 def backtracking_ac3(csp: DroneAssignmentCSP) -> dict[str, str] | None:
     """
     Backtracking search with AC-3 arc consistency.
@@ -60,8 +104,38 @@ def backtracking_ac3(csp: DroneAssignmentCSP) -> dict[str, str] | None:
       - an ac3 function that manages the queue of arcs to check and calls revise.
       - a backtrack function that integrates AC-3 into the search process.
     """
-    # TODO: Implement your code here
-    return None
+    domains = deepcopy(csp.domains)
+
+    if not ac3(csp, domains):
+        return None
+
+    def backtrack(assignment: dict[str, str]) -> dict[str, str] | None:
+        if csp.is_complete(assignment):
+            return assignment.copy()
+
+        var = csp.get_unassigned_variables(assignment)[0]
+
+        for value in list(domains[var]):
+            if csp.is_consistent(var, value, assignment):
+                saved_domains = deepcopy(domains)
+
+                csp.assign(var, value, assignment)
+                domains[var] = [value]
+
+                queue = deque((neighbor, var) for neighbor in csp.get_neighbors(var))
+
+                if ac3(csp, domains, queue):
+                    result = backtrack(assignment)
+                    if result is not None:
+                        return result
+
+                csp.unassign(var, assignment)
+                domains.clear()
+                domains.update(saved_domains)
+
+        return None
+
+    return backtrack({})
 
 
 def backtracking_mrv_lcv(csp: DroneAssignmentCSP) -> dict[str, str] | None:
