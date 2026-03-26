@@ -25,7 +25,36 @@ def backtracking_search(csp: DroneAssignmentCSP) -> dict[str, str] | None:
     Artificial Intelligence: A Modern Approach (4th Edition) by Russell and Norvig, Chapter 5: Constraint Satisfaction Problems
     """
     # TODO: Implement your code here
-    return None
+    
+    contador = [0, 0]  # contadores que contienen las asignaciones y los backtracks hechos respectivamente. 
+
+    def backtrack(assignment: dict[str, str]) -> dict[str, str] | None:
+
+        if csp.is_complete(assignment):   #caso donde todas la s asignaciones se hicieron correctamente. 
+            return assignment
+
+        variable = csp.get_unassigned_variables(assignment)[0]   #Elegir la primera variable 
+
+        for value in csp.domains[variable]:
+            
+            if csp.is_consistent(variable, value, assignment): #Mirar la consistencia y asignar el valor a la variable si es consistente.
+                csp.assign(variable, value, assignment)
+                contador[0] += 1   
+                result = backtrack(assignment)
+                if result is not None:
+                    return result
+
+                
+                csp.unassign(variable, assignment) #Si no se encontró una solución, desasignar la variable y continuar con el siguiente valor.
+                contador[1] += 1    
+
+        return None
+
+    # Simepre se inica con una asignación vacía, y se llama a la función recursiva backtrack. 
+    initial_assignment = {}
+    solution = backtrack(initial_assignment)
+    
+    return solution
 
 
 def backtracking_fc(csp: DroneAssignmentCSP) -> dict[str, str] | None:

@@ -66,7 +66,55 @@ class MinimaxAgent(MultiAgentSearchAgent):
         - Return the ACTION (not the value) that maximizes the minimax value for the drone.
         """
         # TODO: Implement your code here
-        return None
+        
+        mejor_ac = None
+        mejor_val = -float('inf')
+        num_agentes = state.get_num_agents()
+        
+        def minimax(state, agent_index, depth, alpha, beta):
+            # CASO META O LLEGADA DE PROFUNDIDAD MAXIMA
+            if state.is_win() or state.is_lose() or depth == 0:
+                return self.evaluation_function(state)
+            
+            if agent_index == 0:  # Nodo max que representa al dron.
+                valor = -float('inf')
+                for action in state.get_legal_actions(agent_index):
+                    next_state = state.generate_successor(agent_index, action)
+                    next_agent = (agent_index + 1) % num_agentes
+                    if next_agent == 0:
+                        next_depth = depth - 1
+                    else:
+                        next_depth = depth
+                    valor = max(valor, minimax(next_state, next_agent, next_depth, alpha, beta))
+                    # MaX poda
+                    if valor >= beta:
+                        return valor
+                    alpha = max(alpha, valor)
+                return valor
+            else:  # Nodo del min que representa a los cazadores.
+                valor = float('inf')
+                for action in state.get_legal_actions(agent_index):
+                    next_state = state.generate_successor(agent_index, action)
+                    next_agent = (agent_index + 1) % num_agentes
+                    if next_agent == 0:
+                        next_depth = depth - 1
+                    else:
+                        next_depth = depth
+                    valor = min(valor, minimax(next_state, next_agent, next_depth, alpha, beta))
+                    # Min poda
+                    if valor <= alpha:
+                        return valor
+                    beta = min(beta, valor)
+                return valor
+
+        for action in state.get_legal_actions(0):
+            next_state = state.generate_successor(0, action)
+            # Teoricammente un arbol que se construye con alfa-beta, por tanto en este caso el arbol tambien se inicializa con alpha = -inf, beta = +inf
+            value = minimax(next_state, 1, self.depth, -float('inf'), float('inf'))
+            if value > mejor_val:
+                mejor_val = value
+                mejor_ac = action
+        return mejor_ac
 
 
 class AlphaBetaAgent(MultiAgentSearchAgent):
@@ -91,8 +139,9 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
         - Pass alpha and beta through the recursive calls.
         """
         # TODO: Implement your code here (BONUS)
-        return None
-
+        
+        
+        
 
 class ExpectimaxAgent(MultiAgentSearchAgent):
     """
