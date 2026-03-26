@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 from math import inf
-from Drones.algorithms.utils import bfs_distance
+from algorithms.utils import bfs_distance
 
 
 if TYPE_CHECKING:

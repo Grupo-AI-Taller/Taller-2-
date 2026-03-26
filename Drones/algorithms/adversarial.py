@@ -68,7 +68,6 @@ class MinimaxAgent(MultiAgentSearchAgent):
         # TODO: Implement your code here
         return None
 
-
 class AlphaBetaAgent(MultiAgentSearchAgent):
     """
     Alpha-Beta pruning agent. Same as Minimax but with alpha-beta pruning.
@@ -90,8 +89,61 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
         - Update beta at MIN nodes: beta = min(beta, value).
         - Pass alpha and beta through the recursive calls.
         """
-        # TODO: Implement your code here (BONUS)
-        return None
+        alpha, beta = float("-inf"), float("inf")
+        best_value = float("-inf")
+        best_action = None
+
+        # El dron (agente 0) es MAX
+        for action in state.get_legal_actions(0):
+            successor = state.generate_successor(0, action)
+            value = self.min_value(successor, 1, 0, alpha, beta)
+            if value > best_value:
+                best_value = value
+                best_action = action
+            alpha = max(alpha, best_value)
+
+        return best_action
+
+    def max_value(self, state: GameState, depth: int, alpha: float, beta: float) -> float:
+        """
+        Nodo MAX (dron).
+        """
+        if state.is_terminal() or depth == self.depth:
+            return self.evaluation_function(state)
+
+        value = float("-inf")
+        for action in state.get_legal_actions(0):
+            successor = state.generate_successor(0, action)
+            child_value = self.min_value(successor, 1, depth, alpha, beta)
+            if child_value > value:
+                value = child_value
+            if value > beta:  # poda beta estricta
+                return value
+            alpha = max(alpha, value)
+        return value
+
+    def min_value(self, state: GameState, agent_index: int, depth: int, alpha: float, beta: float) -> float:
+        """
+        Nodo MIN (cazadores).
+        """
+        if state.is_terminal():
+            return self.evaluation_function(state)
+
+        value = float("inf")
+        for action in state.get_legal_actions(agent_index):
+            successor = state.generate_successor(agent_index, action)
+
+            # Si hay más cazadores, seguimos con MIN; si no, volvemos a MAX
+            if agent_index < state.get_num_agents() - 1:
+                value = min(value, self.min_value(successor, agent_index + 1, depth, alpha, beta))
+            else:
+                value = min(value, self.max_value(successor, depth + 1, alpha, beta))
+
+            if value < alpha:  # poda alfa estricta
+                return value
+            beta = min(beta, value)
+        return value
+
 
 
 class ExpectimaxAgent(MultiAgentSearchAgent):
