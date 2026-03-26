@@ -94,7 +94,6 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
         best_value = float("-inf")
         best_action = None
 
-        # El dron (agente 0) es MAX
         for action in state.get_legal_actions(0):
             successor = state.generate_successor(0, action)
             value = self.min_value(successor, 1, 0, alpha, beta)
@@ -118,7 +117,7 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
             child_value = self.min_value(successor, 1, depth, alpha, beta)
             if child_value > value:
                 value = child_value
-            if value > beta:  # poda beta estricta
+            if value > beta: 
                 return value
             alpha = max(alpha, value)
         return value
@@ -134,13 +133,12 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
         for action in state.get_legal_actions(agent_index):
             successor = state.generate_successor(agent_index, action)
 
-            # Si hay más cazadores, seguimos con MIN; si no, volvemos a MAX
             if agent_index < state.get_num_agents() - 1:
                 value = min(value, self.min_value(successor, agent_index + 1, depth, alpha, beta))
             else:
                 value = min(value, self.max_value(successor, depth + 1, alpha, beta))
 
-            if value < alpha:  # poda alfa estricta
+            if value < alpha: 
                 return value
             beta = min(beta, value)
         return value

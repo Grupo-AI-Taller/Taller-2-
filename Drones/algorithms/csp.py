@@ -26,20 +26,18 @@ def backtracking_search(csp: DroneAssignmentCSP) -> dict[str, str] | None:
     You can find inspiration in the textbook's pseudocode:
     Artificial Intelligence: A Modern Approach (4th Edition) by Russell and Norvig, Chapter 5: Constraint Satisfaction Problems
     """
-    # TODO: Implement your code here
     
-    contador = [0, 0]  # contadores que contienen las asignaciones y los backtracks hechos respectivamente. 
+    contador = [0, 0]  
 
     def backtrack(assignment: dict[str, str]) -> dict[str, str] | None:
 
-        if csp.is_complete(assignment):   #caso donde todas la s asignaciones se hicieron correctamente. 
+        if csp.is_complete(assignment):  
             return assignment
 
-        variable = csp.get_unassigned_variables(assignment)[0]   #Elegir la primera variable 
-
+        variable = csp.get_unassigned_variables(assignment)[0] 
         for value in csp.domains[variable]:
             
-            if csp.is_consistent(variable, value, assignment): #Mirar la consistencia y asignar el valor a la variable si es consistente.
+            if csp.is_consistent(variable, value, assignment): 
                 csp.assign(variable, value, assignment)
                 contador[0] += 1   
                 result = backtrack(assignment)
@@ -47,12 +45,11 @@ def backtracking_search(csp: DroneAssignmentCSP) -> dict[str, str] | None:
                     return result
 
                 
-                csp.unassign(variable, assignment) #Si no se encontró una solución, desasignar la variable y continuar con el siguiente valor.
+                csp.unassign(variable, assignment)
                 contador[1] += 1    
 
         return None
 
-    # Simepre se inica con una asignación vacía, y se llama a la función recursiva backtrack. 
     initial_assignment = {}
     solution = backtrack(initial_assignment)
     
@@ -91,24 +88,22 @@ def backtrack_fc(csp: DroneAssignmentCSP, assignment: dict[str, str], stats: dic
     if csp.is_complete(assignment):
         return assignment
 
-    # Seleccionamos la siguiente variable no asignada
     unassigned = csp.get_unassigned_variables(assignment)
     var = unassigned[0]
 
     for value in csp.domains[var]:
         if csp.is_consistent(var, value, assignment):
-            # Asignamos valor
+
             csp.assign(var, value, assignment)
             stats["assignments"] += 1
 
-            # Forward checking
+
             success, saved_domains = forward_check(csp, var, value, assignment)
             if success:
                 result = backtrack_fc(csp, assignment, stats)
                 if result is not None:
                     return result
 
-            # Restauramos dominios y desasignamos
             csp.domains = {v: list(saved_domains[v]) for v in saved_domains}
             csp.unassign(var, assignment)
 
