@@ -179,5 +179,106 @@ def backtracking_mrv_lcv(csp: DroneAssignmentCSP) -> dict[str, str] | None:
       values that rule out the fewest choices for neighboring variables.
     - Use csp.get_num_conflicts(var, value, assignment) to count how many values would be ruled out for neighbors if var=value is assigned.
     """
-    # TODO: Implement your code here (BONUS)
-    return None
+    def seleccionar_variable_mrv(assignment):
+        """
+        MRV: selecciona la variable no asignada con menor cantidad de valores legales.
+        Desempate por grado: prefiere la variable con más vecinos no asignados.
+        """
+        no_asignadas = csp.get_unassigned_variables(assignment)
+        mejor_var = None
+        menor_dominio = float('inf')
+        mayor_grado = -1
+
+        for var in no_asignadas:
+            tam_dominio = len(csp.domains[var])
+            if tam_dominio < menor_dominio:
+                menor_dominio = tam_dominio
+                # Calcular grado: vecinos no asignados
+                grado = sum(1 for v in csp.get_neighbors(var) if v not in assignment)
+                mayor_grado = grado
+                mejor_var = var
+            elif tam_dominio == menor_dominio:
+                # Desempate por grado
+                grado = sum(1 for v in csp.get_neighbors(var) if v not in assignment)
+                if grado > mayor_grado:
+                    mayor_grado = grado
+                    mejor_var = var
+
+        return mejor_var
+
+    def ordenar_valores_lcv(var, assignment):
+        """
+        LCV: ordena los valores del dominio de menor a mayor número de conflictos.
+        Prefiere valores que eliminan menos opciones para los vecinos.
+        """
+        valores_con_conflictos = []
+        for valor in csp.domains[var]:
+            conflictos = csp.get_num_conflicts(var, valor, assignment)
+            valores_con_conflictos.append((conflictos, valor))
+        # Ordenar por menor cantidad de conflictos primero
+        valores_con_conflictos.sort(key=lambda x: x[0])
+        return [valor for _, valor in valores_con_conflictos]
+
+    def forward_check(var, valor, assignment):
+        """
+        Propagación hacia adelante: elimina valores inconsistentes de los
+        dominios de los vecinos no asignados. Retorna los dominios guardados
+        para poder restaurarlos, o None si algún dominio queda vacío.
+        """
+        dominios_guardados = {}
+        for vecino in csp.get_neighbors(var):
+            if vecino in assignment:
+                continue
+            dominios_guardados[vecino] = list(csp.domains[vecino])
+            nuevo_dominio = []
+            for val in csp.domains[vecino]:
+                if csp.is_consistent(vecino, val, assignment):
+                    nuevo_dominio.append(val)
+            if not nuevo_dominio:
+                # Dominio vacío: restaurar y fallar
+                for v, dom in dominios_guardados.items():
+                    csp.domains[v] = dom
+                return None
+            csp.domains[vecino] = nuevo_dominio
+        return dominios_guardados
+
+    def restaurar_dominios(dominios_guardados):
+        """Restaura los dominios a su estado anterior."""
+        for var, dominio in dominios_guardados.items():
+            csp.domains[var] = dominio
+
+    def backtrack(assignment):
+        # Si la asignación está completa, retornar solución
+        if csp.is_complete(assignment):
+            return assignment
+
+        # Seleccionar variable con MRV
+        var = seleccionar_variable_mrv(assignment)
+        if var is None:
+            return None
+
+        # Ordenar valores con LCV
+        valores_ordenados = ordenar_valores_lcv(var, assignment)
+
+        for valor in valores_ordenados:
+            if csp.is_consistent(var, valor, assignment):
+                # Asignar
+                csp.assign(var, valor, assignment)
+
+                # Forward checking
+                dominios_guardados = forward_check(var, valor, assignment)
+
+                if dominios_guardados is not None:
+                    # Recurrir
+                    resultado = backtrack(assignment)
+                    if resultado is not None:
+                        return resultado
+                    # Restaurar dominios al hacer backtrack
+                    restaurar_dominios(dominios_guardados)
+
+                # Desasignar
+                csp.unassign(var, assignment)
+
+        return None
+
+    return backtrack({})
