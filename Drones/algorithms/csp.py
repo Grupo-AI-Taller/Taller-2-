@@ -55,11 +55,6 @@ def backtracking_search(csp: DroneAssignmentCSP) -> dict[str, str] | None:
     
     return solution
 
-
-def backtracking_fc(csp: DroneAssignmentCSP) -> dict[str, str] | None:
-    
-    return None
-
 def forward_check(csp: DroneAssignmentCSP, var: str, value: str, assignment: dict[str, str]) -> tuple[bool, dict[str, list[str]]]:
     """
     Aplica forward checking después de asignar un valor a una variable.
